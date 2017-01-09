@@ -1,0 +1,6 @@
+[package]
+name = "countish"
+version = "0.1.0"
+authors = ["Shane Hansen <shansen@walmartlabs.com>"]
+
+[dependencies]
