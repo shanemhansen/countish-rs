@@ -5,3 +5,11 @@ authors = ["Shane Hansen <shansen@walmartlabs.com>"]
 
 [dependencies]
 rand = "0.3"
+
+[[bin]]
+name = "rcountish"
+path = "src/main.rs"
+
+[lib]
+name = "countish"
+path = "src/lib.rs"
