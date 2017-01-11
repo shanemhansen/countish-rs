@@ -147,18 +147,18 @@ impl StickySampler {
             self.r *=2.0;
             self.prune()
         }
-        let k = key.to_string();
-        let exists = match self.s.get(key) {
-            Some(_) => true,
-            _ => false
-        };
-        if !exists {
+        if let Some(val) = self.s.get_mut(key) {
+            *val += 1.0;
+            return;
+        } else {
             let mut rng = thread_rng();
             let should_sample =  rng.next_f64() <= 1.0/self.r;
             if !should_sample {
                 return
-            }            
+            }
         }
+        // only arrive here for new elements which should be sampled
+        let k = key.to_string();
         *self.s.entry(k).or_insert(0.0)+=1.0;
     }
 }
