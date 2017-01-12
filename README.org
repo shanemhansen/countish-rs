@@ -1,0 +1,60 @@
+* Approximate frequency counts over data streams for Rust
+
+Countish implements two approximate counting algorithms  outlined in "Approximate Frequency Counts over Data Streams".
+
+http://www.vldb.org/conf/2002/S10P03.pdf
+
+Currently it only works with strings. The public API isn't fixed, I expect to
+support other hashable types. Once I learn a little more rust ; )
+
+
+** Use cases
+
+Have you ever needed to do something like calculate the top
+URLs or top ips from an infinite stream? This package provides probabalistic
+frequency counters, with accuracy guarantees and low memory usage.
+
+countish provides an extremely simple interface consisting of an "observe" method and
+a "items_above_threshold" method.
+
+
+
+Example:
+
+#+BEGIN_SRC bash :exports both
+cargo build --release
+cat urls.txt |  ./target/release/rcountish --threshold 0.3
+#+END_SRC
+
+#+RESULTS:
+: / 0.42867142857142854
+
+3 counting implementations are provided.
+
+1) Naive: exact counts are held in a map
+2) Lossy: corresponding to "lossy counting"
+3) Sticky: corresponding to "sticky sampling"
+
+** Example:
+
+#+BEGIN_SRC rust :exports source
+  extern crate countish;
+  use countish::{new_lossy_counter};
+  fn main() {
+      let mut sampler = new_lossy_counter(0.01, 0.005);
+      for _ in 1..10 {
+          sampler.observe("shane");
+      }
+      sampler.observe("hansen");
+      let items = sampler.items_above_threshold(0.5);
+      for entry in entries {
+          println!("{} {}", entry.key, entry.frequency)
+      }
+  }
+#+END_SRC
+
+#+RESULTS:
+
+** TODO examples showing memory usage comparisons
+
+
