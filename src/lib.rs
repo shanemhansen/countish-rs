@@ -1,19 +1,40 @@
+#![deny(missing_docs,
+        missing_debug_implementations, missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts,
+        unsafe_code,
+        unstable_features,
+        unused_import_braces, unused_qualifications)]
+//! A collection of approximate frequency counting algorithms for rust
 extern crate rand;
 use std::collections::HashMap;
 use rand::{thread_rng, Rng};
 
+
+/// trait for things which can count values
+pub trait Counter {
+    /// `observe` tracks a value
+    fn observe(&mut self, key: &str);
+    /// `items_above_threshold` return entries above threshold
+    fn items_above_threshold(&self, threshold: f64) -> Vec<Entry>;
+}
+
+/// `Entry` tracks a key and it's frequency.
 #[derive(Debug)]
 pub struct Entry {
+    /// The observed value
     pub key: String,
+    /// The approximate frequency of the observed value on the interval (0,1]
     pub frequency: f64,
 }
 
+/// `NaiveSampler` is a reference exact counting implementation. I requires O(n) memory.
 #[derive(Default,Debug)]
 pub struct NaiveSampler {
     n: u64,
     vals: HashMap<String, u64>,
 }
 
+/// Construct a new `NaiveSampler`
 pub fn new_naive_sampler() -> NaiveSampler {
     NaiveSampler {
         n: 0,
@@ -21,12 +42,14 @@ pub fn new_naive_sampler() -> NaiveSampler {
     }
 }
 
-impl NaiveSampler {
-    pub fn observe(&mut self, key: &str) {
+impl Counter for NaiveSampler {
+    /// record that the given key has been observed.
+    fn observe(&mut self, key: &str) {
         self.n += 1;
         *self.vals.entry(key.to_string()).or_insert(0) += 1;
     }
-    pub fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
+    /// return items who's frequency exceeds threshld
+    fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
         let count: u64 = ((self.n as f64) * threshold) as u64;
         self.vals
             .iter()
@@ -41,18 +64,24 @@ impl NaiveSampler {
     }
 }
 
+#[derive(Debug)]
 struct FDeltaPair {
     f: f64,
     delta: f64,
 }
 
 
+/// `LossyCounter` implements the lossy counter outlined here
+/// http://www.vldb.org/conf/2002/S10P03.pdf
+#[derive(Debug)]
 pub struct LossyCounter {
     support: f64,
     d: HashMap<String, FDeltaPair>,
     n: u64,
     bucket_width: u64,
 }
+
+/// `new_lossy_counter` constructs a counter with the given support and error tolerance
 pub fn new_lossy_counter(support: f64, error_tolerance: f64) -> LossyCounter {
     LossyCounter {
         support: support,
@@ -61,9 +90,8 @@ pub fn new_lossy_counter(support: f64, error_tolerance: f64) -> LossyCounter {
         n: 0,
     }
 }
-
 impl LossyCounter {
-    fn prune(&mut self, bucket: u64) {
+        fn prune(&mut self, bucket: u64) {
         let fbucket = bucket as f64;
         let to_remove: Vec<String> = self.d
             .iter()
@@ -74,7 +102,11 @@ impl LossyCounter {
             self.d.remove(key);
         }
     }
-    pub fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
+
+}
+impl Counter for LossyCounter {
+    /// return items who's frequency exceeds threshld
+    fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
         let f_n = self.n as f64;
         self.d
             .iter()
@@ -88,7 +120,8 @@ impl LossyCounter {
             .collect()
 
     }
-    pub fn observe(&mut self, key: &str) {
+    /// record that the given key has been observed.
+    fn observe(&mut self, key: &str) {
         self.n += 1;
         let bucket = (self.n / self.bucket_width) + 1;
         let newval = match self.d.get(key) {
@@ -107,6 +140,9 @@ impl LossyCounter {
     }
 }
 
+/// `StickySampler` implements an approximate frequency counting algorithm outlined here
+/// http://www.vldb.org/conf/2002/S10P03.pdf
+#[derive(Debug)]
 pub struct StickySampler {
     error_tolerance: f64,
     support: f64,
@@ -116,6 +152,8 @@ pub struct StickySampler {
     t: f64,
 }
 
+/// `new_sampler` returns a new sticky sampler with the given `support`, `error_tolerance`, and failure
+/// probability
 pub fn new_sampler(support: f64, error_tolerance: f64, failure_prob: f64) -> StickySampler {
     let two_t = 2.0 / error_tolerance * (1.0 / (support * failure_prob)).ln();
     StickySampler {
@@ -128,7 +166,7 @@ pub fn new_sampler(support: f64, error_tolerance: f64, failure_prob: f64) -> Sti
     }
 }
 impl StickySampler {
-    pub fn prune(&mut self) {
+        fn prune(&mut self) {
         let mut rng = thread_rng();
         // TODO: clean this up. go allows mutations
         let mut to_remove: Vec<String> = vec![];
@@ -154,10 +192,11 @@ impl StickySampler {
             *self.s.entry(key.clone()).or_insert(1.0) -= 1.0;
         }
     }
-    pub fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
-        for (key, val) in &self.s {
-            println!("{}:{}", key, val);
-        }
+
+}
+impl Counter for StickySampler {
+    /// return items who's frequency exceeds threshld
+    fn items_above_threshold(&self, threshold: f64) -> Vec<Entry> {
         self.s
             .iter()
             .filter(|&(_, f)| *f >= (threshold - self.error_tolerance) * self.n)
@@ -169,7 +208,8 @@ impl StickySampler {
             })
             .collect()
     }
-    pub fn observe(&mut self, key: &str) {
+    /// record that the given key has been observed.
+    fn observe(&mut self, key: &str) {
         self.n += 1.0;
         let count = self.n;
         if count > self.t {

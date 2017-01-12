@@ -1,10 +1,11 @@
 [package]
 name = "countish"
 version = "0.1.0"
-authors = ["Shane Hansen <shansen@walmartlabs.com>"]
+authors = ["Shane Hansen <shanemhansen@gmail.com>"]
 
 [dependencies]
 rand = "0.3"
+getopts = "0.2"
 
 [[bin]]
 name = "rcountish"
@@ -13,3 +14,6 @@ path = "src/main.rs"
 [lib]
 name = "countish"
 path = "src/lib.rs"
+
+[profile.release]
+debug = true
