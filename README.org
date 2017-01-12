@@ -7,6 +7,11 @@ http://www.vldb.org/conf/2002/S10P03.pdf
 Currently it only works with strings. The public API isn't fixed, I expect to
 support other hashable types. Once I learn a little more rust ; )
 
+See this blog post for some more background on counting and the go implementation: http://whitane.com/post/how-to-countish/
+
+The rust impl is actually much faster than the go version. Which given that I know lots of go and
+almost no rust is pretty exciting.
+
 
 ** Use cases
 
