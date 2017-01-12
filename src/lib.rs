@@ -233,6 +233,7 @@ impl Counter for StickySampler {
 
 #[cfg(test)]
 mod tests {
+    use ::Counter;
     #[test]
     fn naive() {
         let mut sampler = ::NaiveSampler { ..Default::default() };
