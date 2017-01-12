@@ -91,7 +91,7 @@ pub fn new_lossy_counter(support: f64, error_tolerance: f64) -> LossyCounter {
     }
 }
 impl LossyCounter {
-        fn prune(&mut self, bucket: u64) {
+    fn prune(&mut self, bucket: u64) {
         let fbucket = bucket as f64;
         let to_remove: Vec<String> = self.d
             .iter()
@@ -102,7 +102,6 @@ impl LossyCounter {
             self.d.remove(key);
         }
     }
-
 }
 impl Counter for LossyCounter {
     /// return items who's frequency exceeds threshld
@@ -152,8 +151,8 @@ pub struct StickySampler {
     t: f64,
 }
 
-/// `new_sampler` returns a new sticky sampler with the given `support`, `error_tolerance`, and failure
-/// probability
+/// `new_sampler` returns a new sticky sampler with the given
+/// `support`, `error_tolerance`, and failure probability
 pub fn new_sampler(support: f64, error_tolerance: f64, failure_prob: f64) -> StickySampler {
     let two_t = 2.0 / error_tolerance * (1.0 / (support * failure_prob)).ln();
     StickySampler {
@@ -166,7 +165,7 @@ pub fn new_sampler(support: f64, error_tolerance: f64, failure_prob: f64) -> Sti
     }
 }
 impl StickySampler {
-        fn prune(&mut self) {
+    fn prune(&mut self) {
         let mut rng = thread_rng();
         // TODO: clean this up. go allows mutations
         let mut to_remove: Vec<String> = vec![];
@@ -192,7 +191,6 @@ impl StickySampler {
             *self.s.entry(key.clone()).or_insert(1.0) -= 1.0;
         }
     }
-
 }
 impl Counter for StickySampler {
     /// return items who's frequency exceeds threshld
