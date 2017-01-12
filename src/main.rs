@@ -81,8 +81,11 @@ pub fn main() {
         _ => panic!("unknown implementation"),
 
     };
-
+    let mut out =  io::stdout();
     for entry in entries {
-        println!("{} {}", entry.key, entry.frequency);
+        if let Err(_) = write!(out,"{} {}\n", entry.key, entry.frequency) {
+            // gracefully handle pipe errors or write failues.
+            break
+        }
     }
 }
